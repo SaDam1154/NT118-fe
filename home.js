@@ -6,8 +6,6 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { FontAwesome } from '@expo/vector-icons';
-import Login from './components/login';
-const Stack = createNativeStackNavigator();
 
 function TextInTheme({ theme = false, ...props }) {
     return (
@@ -102,17 +100,6 @@ function ProductCard({ theme, product, isFavorite = false, onFavoriteChange }) {
 
 import products from './db/db';
 function ProductListScreen({ navigation, theme, favoriteList, setFavoriteList }) {
-    useEffect(() => {
-        // fetchData();
-        const fetchAPI = () => {
-            setIsLoading(true);
-            axios.get('https://testnets-api.opensea.io/api/v1/assets').then((data) => {
-                setItem(data.data.assets);
-                console.log(data);
-                setIsLoading(false);
-            });
-        };
-    }, []);
     function handleChangeFavoriteList(id, isFavorite) {
         let newFavoriteList = [];
 
@@ -159,7 +146,7 @@ function FavoriteProductScreen({ navigation, theme, favoriteList, setFavoriteLis
             {products.map(
                 (product) =>
                     favoriteList.includes(product.id) && (
-                        <TouchableOpacity key={product.id} onPress={() => navigation.navigate('Login')}>
+                        <TouchableOpacity key={product.id} onPress={() => navigation.navigate('Detail', { product })}>
                             <ProductCard
                                 product={product}
                                 theme={theme}
@@ -309,7 +296,7 @@ export default function App() {
         <>
             <NavigationContainer>
                 <Tab.Navigator
-                    initialRouteName="Login"
+                    initialRouteName="List-Item"
                     screenOptions={{
                         headerStyle: {
                             backgroundColor: theme ? '#111' : '#fff',
@@ -322,15 +309,6 @@ export default function App() {
                         },
                     }}
                 >
-                    <Tab.Screen
-                        name="Login"
-                        options={{
-                            header: () => null,
-                            tabBarButton: () => null,
-                        }}
-                    >
-                        {(props) => <Login {...props} />}
-                    </Tab.Screen>
                     <Tab.Screen
                         name="List-Item"
                         options={{
