@@ -9,6 +9,8 @@ import { FontAwesome } from '@expo/vector-icons';
 import Login from './components/login';
 const Stack = createNativeStackNavigator();
 
+const locallhost = '192.168.8.242';
+
 function TextInTheme({ theme = false, ...props }) {
     return (
         <Text
@@ -100,18 +102,25 @@ function ProductCard({ theme, product, isFavorite = false, onFavoriteChange }) {
     );
 }
 
-import products from './db/db';
 function ProductListScreen({ navigation, theme, favoriteList, setFavoriteList }) {
-    useEffect(() => {
-        // fetchData();
-        const fetchAPI = () => {
-            setIsLoading(true);
-            axios.get('https://testnets-api.opensea.io/api/v1/assets').then((data) => {
-                setItem(data.data.assets);
-                console.log(data);
-                setIsLoading(false);
+    const [isLoading, setLoading] = useState(true);
+    const [products, setProducts] = useState([]);
+
+    const getProducts = async () => {
+        fetch('http://' + locallhost + ':5000/api/product')
+            .then((res) => res.json())
+            .then((resJson) => {
+                if (resJson.success) {
+                    setProducts(resJson.products);
+                    console.log(products);
+                } else {
+                    setProducts([]);
+                }
             });
-        };
+    };
+
+    useEffect(() => {
+        getProducts();
     }, []);
     function handleChangeFavoriteList(id, isFavorite) {
         let newFavoriteList = [];
@@ -141,6 +150,25 @@ function ProductListScreen({ navigation, theme, favoriteList, setFavoriteList })
     );
 }
 function FavoriteProductScreen({ navigation, theme, favoriteList, setFavoriteList }) {
+    const [isLoading, setLoading] = useState(true);
+    const [products, setProducts] = useState([]);
+
+    const getProducts = async () => {
+        fetch('http://' + locallhost + ':5000/api/product')
+            .then((res) => res.json())
+            .then((resJson) => {
+                if (resJson.success) {
+                    setProducts(resJson.products);
+                    console.log(products);
+                } else {
+                    setProducts([]);
+                }
+            });
+    };
+
+    useEffect(() => {
+        getProducts();
+    }, []);
     function handleChangeFavoriteList(id, isFavorite) {
         let newFavoriteList = [];
 
@@ -309,7 +337,7 @@ export default function App() {
         <>
             <NavigationContainer>
                 <Tab.Navigator
-                    initialRouteName="Login"
+                    initialRouteName="List-Item"
                     screenOptions={{
                         headerStyle: {
                             backgroundColor: theme ? '#111' : '#fff',
