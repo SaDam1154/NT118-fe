@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Image, ScrollView, TouchableOpacity, Button, Switch, Text } from 'react-native';
+import { View, Image, ScrollView, StyleSheet, TouchableOpacity, TextInput, Button, Switch, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { FontAwesome } from '@expo/vector-icons';
-import Login from './components/login';
+// import Login from './components/login';
 const Stack = createNativeStackNavigator();
 
-const locallhost = '192.168.8.242';
+const localhost = '192.168.8.242';
 
 function TextInTheme({ theme = false, ...props }) {
     return (
@@ -107,7 +107,7 @@ function ProductListScreen({ navigation, theme, favoriteList, setFavoriteList })
     const [products, setProducts] = useState([]);
 
     const getProducts = async () => {
-        fetch('http://' + locallhost + ':5000/api/product')
+        fetch('http://' + localhost + ':5000/api/product')
             .then((res) => res.json())
             .then((resJson) => {
                 if (resJson.success) {
@@ -154,7 +154,7 @@ function FavoriteProductScreen({ navigation, theme, favoriteList, setFavoriteLis
     const [products, setProducts] = useState([]);
 
     const getProducts = async () => {
-        fetch('http://' + locallhost + ':5000/api/product')
+        fetch('http://' + localhost + ':5000/api/product')
             .then((res) => res.json())
             .then((resJson) => {
                 if (resJson.success) {
@@ -187,7 +187,7 @@ function FavoriteProductScreen({ navigation, theme, favoriteList, setFavoriteLis
             {products.map(
                 (product) =>
                     favoriteList.includes(product.id) && (
-                        <TouchableOpacity key={product.id} onPress={() => navigation.navigate('Login')}>
+                        <TouchableOpacity key={product.id} onPress={() => navigation.navigate('Detail', { product })}>
                             <ProductCard
                                 product={product}
                                 theme={theme}
@@ -273,7 +273,7 @@ function DetailProductScreen({ route, theme, favoriteList, setFavoriteList }) {
         </ScrollView>
     );
 }
-function SettingScreen({ route, theme, setDark }) {
+function SettingScreen({ navigation, route, theme, setDark }) {
     function handleChangeTheme() {
         AsyncStorage.setItem('DarkTheme', JSON.stringify(!theme)).then((value) => {});
         setDark((previousState) => !previousState);
@@ -306,6 +306,88 @@ function SettingScreen({ route, theme, setDark }) {
                     value={theme}
                 />
             </View>
+            <TouchableOpacity
+                style={styles.button}
+                onPress={() => {
+                    navigation.navigate('Login');
+                }}
+            >
+                <Text style={styles.buttonText}>logout</Text>
+            </TouchableOpacity>
+        </View>
+    );
+}
+function Login({ navigation, route, theme, setDark }) {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [message, setMessage] = useState('');
+    const [log, setLog] = useState(false);
+
+    const login = () => {
+        var myHeaders = new Headers();
+        myHeaders.append('Content-Type', 'application/json');
+
+        var raw = JSON.stringify({
+            email: username,
+            password: password,
+        });
+
+        var requestOptions = {
+            method: 'POST',
+            headers: myHeaders,
+            body: raw,
+            redirect: 'follow',
+        };
+
+        fetch('http://' + localhost + ':5000/api/auth/login', requestOptions)
+            .then((res) => res.json())
+            .then((resJson) => {
+                if (resJson.success) {
+                    // setLoading(false);
+                    setLog(true);
+                    // dispatch(accountActions.login(resJson.account));
+                    // if (resJson.account?.role?.name == 'Chủ cửa hàng') navigate('/admin');
+                    // else navigate('/');
+                    console.log(resJson.account);
+                } else {
+                    // setLoading(false);
+                    showErorrNoti();
+                }
+            })
+            .catch(() => {
+                setLoading(false);
+                showErorrNoti();
+            });
+        // setBMI(weight / (height*height));
+        if (username && password) {
+            if (log) {
+                navigation.navigate('Home');
+            } else setMessage('Wrong username or password');
+        } else {
+            setMessage('Please enter username and password');
+        }
+    };
+    return (
+        <View style={styles.container}>
+            <Text style={styles.text}>Username:</Text>
+            <TextInput
+                style={styles.input}
+                onChangeText={(text) => {
+                    setUsername(text);
+                }}
+            ></TextInput>
+            <Text style={styles.text}>Password:</Text>
+            <TextInput
+                style={styles.input}
+                secureTextEntry={true}
+                onChangeText={(text) => {
+                    setPassword(text);
+                }}
+            />
+            <Text style={styles.message}>{message}</Text>
+            <TouchableOpacity style={styles.button} onPress={login}>
+                <Text style={styles.buttonText}>Login</Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -316,7 +398,7 @@ function TabBarIcon(props) {
     return <FontAwesome size={20} {...props} />;
 }
 
-export default function App() {
+function HomeTabs() {
     const [theme, setDark] = useState(false);
     const [favoriteList, setFavoriteList] = useState([]);
 
@@ -334,95 +416,150 @@ export default function App() {
     }, []);
 
     return (
+        <Tab.Navigator
+            initialRouteName="Login"
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: theme ? '#111' : '#fff',
+                },
+                headerTitleStyle: {
+                    color: theme ? '#fff' : '#000',
+                },
+                tabBarStyle: {
+                    backgroundColor: theme ? '#111' : '#fff',
+                },
+            }}
+        >
+            <Tab.Screen
+                name="List-Item"
+                options={{
+                    tabBarIcon: (props) => <TabBarIcon name="list-ul" {...props} />,
+                }}
+            >
+                {(props) => (
+                    <ProductListScreen
+                        {...props}
+                        theme={theme}
+                        favoriteList={favoriteList}
+                        setFavoriteList={setFavoriteList}
+                    />
+                )}
+            </Tab.Screen>
+            <Tab.Screen
+                name="Favorite List"
+                options={{
+                    tabBarIcon: (props) => <TabBarIcon name="heart" {...props} />,
+                }}
+            >
+                {(props) => (
+                    <FavoriteProductScreen
+                        {...props}
+                        theme={theme}
+                        favoriteList={favoriteList}
+                        setFavoriteList={setFavoriteList}
+                    />
+                )}
+            </Tab.Screen>
+            <Tab.Screen
+                name="Detail"
+                options={{
+                    tabBarButton: () => null,
+                }}
+            >
+                {(props) => (
+                    <DetailProductScreen
+                        {...props}
+                        theme={theme}
+                        favoriteList={favoriteList}
+                        setFavoriteList={setFavoriteList}
+                    />
+                )}
+            </Tab.Screen>
+            <Tab.Screen
+                name="Setting"
+                options={{
+                    tabBarIcon: (props) => <TabBarIcon name="gear" {...props} />,
+                }}
+            >
+                {(props) => (
+                    <SettingScreen
+                        {...props}
+                        theme={theme}
+                        setDark={setDark}
+                        favoriteList={favoriteList}
+                        setFavoriteList={setFavoriteList}
+                    />
+                )}
+            </Tab.Screen>
+        </Tab.Navigator>
+    );
+}
+
+export default function App() {
+    return (
         <>
             <NavigationContainer>
-                <Tab.Navigator
-                    initialRouteName="List-Item"
-                    screenOptions={{
-                        headerStyle: {
-                            backgroundColor: theme ? '#111' : '#fff',
-                        },
-                        headerTitleStyle: {
-                            color: theme ? '#fff' : '#000',
-                        },
-                        tabBarStyle: {
-                            backgroundColor: theme ? '#111' : '#fff',
-                        },
-                    }}
-                >
-                    <Tab.Screen
-                        name="Login"
+                <Stack.Navigator>
+                    <Stack.Screen name="Login" component={Login} />
+                    <Stack.Screen
+                        name="Home"
+                        component={HomeTabs}
                         options={{
                             header: () => null,
-                            tabBarButton: () => null,
                         }}
-                    >
-                        {(props) => <Login {...props} />}
-                    </Tab.Screen>
-                    <Tab.Screen
-                        name="List-Item"
-                        options={{
-                            tabBarIcon: (props) => <TabBarIcon name="list-ul" {...props} />,
-                        }}
-                    >
-                        {(props) => (
-                            <ProductListScreen
-                                {...props}
-                                theme={theme}
-                                favoriteList={favoriteList}
-                                setFavoriteList={setFavoriteList}
-                            />
-                        )}
-                    </Tab.Screen>
-                    <Tab.Screen
-                        name="Favorite List"
-                        options={{
-                            tabBarIcon: (props) => <TabBarIcon name="heart" {...props} />,
-                        }}
-                    >
-                        {(props) => (
-                            <FavoriteProductScreen
-                                {...props}
-                                theme={theme}
-                                favoriteList={favoriteList}
-                                setFavoriteList={setFavoriteList}
-                            />
-                        )}
-                    </Tab.Screen>
-                    <Tab.Screen
-                        name="Detail"
-                        options={{
-                            tabBarButton: () => null,
-                        }}
-                    >
-                        {(props) => (
-                            <DetailProductScreen
-                                {...props}
-                                theme={theme}
-                                favoriteList={favoriteList}
-                                setFavoriteList={setFavoriteList}
-                            />
-                        )}
-                    </Tab.Screen>
-                    <Tab.Screen
-                        name="Setting"
-                        options={{
-                            tabBarIcon: (props) => <TabBarIcon name="gear" {...props} />,
-                        }}
-                    >
-                        {(props) => (
-                            <SettingScreen
-                                {...props}
-                                theme={theme}
-                                setDark={setDark}
-                                favoriteList={favoriteList}
-                                setFavoriteList={setFavoriteList}
-                            />
-                        )}
-                    </Tab.Screen>
-                </Tab.Navigator>
+                    />
+                </Stack.Navigator>
             </NavigationContainer>
             <StatusBar />
         </>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 15,
+    },
+    text: {
+        justifyContent: 'flex-start',
+        fontSize: 20,
+        alignSelf: 'flex-start',
+        padding: 10,
+        fontWeight: 'bold',
+    },
+    input: {
+        borderWidth: 1,
+        width: '100%',
+        padding: 10,
+        height: 60,
+        backgroundColor: 'grey',
+        color: 'white',
+        borderRadius: 4,
+    },
+    message: {
+        alignSelf: 'center',
+        padding: 25,
+        fontSize: 20,
+        color: 'red',
+    },
+    button: {
+        backgroundColor: 'grey',
+        width: '40%',
+        height: 50,
+        borderRadius: 6,
+        justifyContent: 'center',
+    },
+    buttonText: {
+        alignSelf: 'center',
+        fontSize: 25,
+        color: 'white',
+    },
+    success: {
+        fontSize: 30,
+        padding: 10,
+        fontWeight: 'bold',
+    },
+});
