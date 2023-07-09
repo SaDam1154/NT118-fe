@@ -1,0 +1,23 @@
+{
+    "folders": [
+		{
+			"path": "../../../New folder"
+		},
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../Messer"
+		},
+		{
+			"path": "../../Web React/Messer"
+		},
+		{
+			"path": "../../Web React/Web ThuanChay/fe-thuanchay"
+		},
+		{
+			"path": "../../Web React/Web CNPMCS/programming-social-network-be"
+		}
+	],
+    "settings": {}
+}

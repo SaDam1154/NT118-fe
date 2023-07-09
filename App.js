@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, Image, ScrollView, StyleSheet, TouchableOpacity, TextInput, Button, Switch, Text } from 'react-native';
+import {
+    View,
+    Image,
+    ScrollView,
+    StyleSheet,
+    TouchableOpacity,
+    TextInput,
+    Button,
+    Switch,
+    Text,
+    SafeAreaView,
+} from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,7 +20,13 @@ import { FontAwesome } from '@expo/vector-icons';
 // import Login from './components/login';
 const Stack = createNativeStackNavigator();
 
-const localhost = '192.168.8.242';
+//  localhost my3G
+// const localhost = '192.168.8.242';
+
+var user;
+//  localhost Life2
+const localhost = '192.168.1.19';
+// const localhost = 'localhost';
 
 function TextInTheme({ theme = false, ...props }) {
     return (
@@ -288,6 +305,53 @@ function SettingScreen({ navigation, route, theme, setDark }) {
                 backgroundColor: theme ? '#222' : '#eee',
             }}
         >
+            <ScrollView style={{ flex: 1, padding: 24, backgroundColor: theme ? '#222' : '#eee' }}>
+                <Text style={styles.text}>Name:</Text>
+                <TextInput
+                    style={styles.input}
+                    value={lastname}
+                    onChangeText={(text) => {
+                        setLastName(text);
+                    }}
+                ></TextInput>
+                <Text style={styles.text}>Phone:</Text>
+                <TextInput
+                    style={styles.input}
+                    value={phone}
+                    onChangeText={(text) => {
+                        setPhone(text);
+                    }}
+                />
+                <Text style={styles.text}>Address:</Text>
+                <TextInput
+                    style={styles.input}
+                    value={address}
+                    onChangeText={(text) => {
+                        setAddress(text);
+                    }}
+                ></TextInput>
+                <Text style={styles.text}>Email:</Text>
+                <TextInput
+                    style={styles.input}
+                    value={email}
+                    onChangeText={(text) => {
+                        setEmail(text);
+                    }}
+                ></TextInput>
+                <Text style={styles.text}>Password:</Text>
+                <TextInput
+                    style={styles.input}
+                    value={password}
+                    secureTextEntry={true}
+                    onChangeText={(text) => {
+                        setPassword(text);
+                    }}
+                />
+                <Text style={styles.message}>{message}</Text>
+                <TouchableOpacity style={styles.button} onPress={Signup}>
+                    <Text style={styles.buttonText}>Signup</Text>
+                </TouchableOpacity>
+            </ScrollView>
             <View
                 style={{
                     flexDirection: 'row',
@@ -318,7 +382,7 @@ function SettingScreen({ navigation, route, theme, setDark }) {
     );
 }
 function Login({ navigation, route, theme, setDark }) {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [message, setMessage] = useState('');
     const [log, setLog] = useState(false);
@@ -328,7 +392,7 @@ function Login({ navigation, route, theme, setDark }) {
         myHeaders.append('Content-Type', 'application/json');
 
         var raw = JSON.stringify({
-            email: username,
+            email: email,
             password: password,
         });
 
@@ -346,34 +410,37 @@ function Login({ navigation, route, theme, setDark }) {
                     // setLoading(false);
                     setLog(true);
                     // dispatch(accountActions.login(resJson.account));
-                    // if (resJson.account?.role?.name == 'Chủ cửa hàng') navigate('/admin');
                     // else navigate('/');
-                    console.log(resJson.account);
+                    console.log(resJson.user);
+                    user = resJson.user;
                 } else {
                     // setLoading(false);
                     showErorrNoti();
+                    setMessage(resJson.message);
                 }
             })
             .catch(() => {
-                setLoading(false);
+                // setLoading(false);
                 showErorrNoti();
             });
         // setBMI(weight / (height*height));
-        if (username && password) {
+        if (email && password) {
             if (log) {
-                navigation.navigate('Home');
-            } else setMessage('Wrong username or password');
-        } else {
-            setMessage('Please enter username and password');
+                if (user?.role?.name == 'Chủ cửa hàng') {
+                    navigation.navigate('HomeAdmin');
+                } else {
+                    navigation.navigate('Home');
+                }
+            }
         }
     };
     return (
         <View style={styles.container}>
-            <Text style={styles.text}>Username:</Text>
+            <Text style={styles.text}>Email:</Text>
             <TextInput
                 style={styles.input}
                 onChangeText={(text) => {
-                    setUsername(text);
+                    setEmail(text);
                 }}
             ></TextInput>
             <Text style={styles.text}>Password:</Text>
@@ -388,7 +455,126 @@ function Login({ navigation, route, theme, setDark }) {
             <TouchableOpacity style={styles.button} onPress={login}>
                 <Text style={styles.buttonText}>Login</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.signup}
+                onPress={() => {
+                    navigation.navigate('Signup');
+                }}
+            >
+                <Text style={styles.signupText}>Dont have an account yet?</Text>
+            </TouchableOpacity>
         </View>
+    );
+}
+function Signup({ navigation, route, theme, setDark }) {
+    const [email, setEmail] = useState('Khachhang@gmail.com');
+    const [password, setPassword] = useState('khachhang');
+    const [firstname, setFirstName] = useState('khachhang');
+    const [lastname, setLastName] = useState('khachhang');
+    const [phone, setPhone] = useState('0999333123');
+    const [address, setAddress] = useState('An Giang');
+    const [urlAvt, setUrlAvt] = useState(
+        'http://res.cloudinary.com/psncloud/image/upload/v1675047717/users/63bb9473e9456383e6c2f839/avatar/avatar.png'
+    );
+    const [message, setMessage] = useState('');
+    const [log, setLog] = useState(false);
+
+    const Signup = () => {
+        var myHeaders = new Headers();
+        myHeaders.append('Content-Type', 'application/json');
+
+        var raw = JSON.stringify({
+            email: email,
+            password: password,
+            phone: phone,
+            lastname: lastname,
+            address: address,
+            role: '64a30012eccbfd0297c3429b',
+        });
+
+        var requestOptions = {
+            method: 'POST',
+            headers: myHeaders,
+            body: raw,
+            redirect: 'follow',
+        };
+
+        fetch('http://' + localhost + ':5000/api/user', requestOptions)
+            .then((res) => res.json())
+            .then((resJson) => {
+                if (resJson.success) {
+                    setLog(true);
+                    console.log(resJson.user);
+                    user = resJson.user;
+                } else {
+                    // showErorrNoti();
+                    console.log(resJson);
+                    setMessage(resJson.message);
+                }
+            })
+            .catch((err) => {
+                showErorrNoti();
+                console.log(err);
+            });
+        // setBMI(weight / (height*height));
+        if (email && password && phone && lastname && address) {
+            if (log) {
+                if (user?.role?.name == 'Chủ cửa hàng') {
+                    navigation.navigate('HomeAdmin');
+                } else {
+                    navigation.navigate('Home');
+                }
+            }
+        }
+    };
+    return (
+        <ScrollView style={{ flex: 1, padding: 24, backgroundColor: theme ? '#222' : '#eee' }}>
+            <Text style={styles.text}>Name:</Text>
+            <TextInput
+                style={styles.input}
+                value={lastname}
+                onChangeText={(text) => {
+                    setLastName(text);
+                }}
+            ></TextInput>
+            <Text style={styles.text}>Phone:</Text>
+            <TextInput
+                style={styles.input}
+                value={phone}
+                onChangeText={(text) => {
+                    setPhone(text);
+                }}
+            />
+            <Text style={styles.text}>Address:</Text>
+            <TextInput
+                style={styles.input}
+                value={address}
+                onChangeText={(text) => {
+                    setAddress(text);
+                }}
+            ></TextInput>
+            <Text style={styles.text}>Email:</Text>
+            <TextInput
+                style={styles.input}
+                value={email}
+                onChangeText={(text) => {
+                    setEmail(text);
+                }}
+            ></TextInput>
+            <Text style={styles.text}>Password:</Text>
+            <TextInput
+                style={styles.input}
+                value={password}
+                secureTextEntry={true}
+                onChangeText={(text) => {
+                    setPassword(text);
+                }}
+            />
+            <Text style={styles.message}>{message}</Text>
+            <TouchableOpacity style={styles.button} onPress={Signup}>
+                <Text style={styles.buttonText}>Signup</Text>
+            </TouchableOpacity>
+        </ScrollView>
     );
 }
 
@@ -417,7 +603,7 @@ function HomeTabs() {
 
     return (
         <Tab.Navigator
-            initialRouteName="Login"
+            initialRouteName="List-Item"
             screenOptions={{
                 headerStyle: {
                     backgroundColor: theme ? '#111' : '#fff',
@@ -494,16 +680,120 @@ function HomeTabs() {
         </Tab.Navigator>
     );
 }
+function HomeAdminTabs() {
+    const [theme, setDark] = useState(false);
+    const [favoriteList, setFavoriteList] = useState([]);
+
+    useEffect(() => {
+        AsyncStorage.getItem('favorites').then((value) => {
+            if (value !== null) {
+                setFavoriteList(JSON.parse(value));
+            }
+        });
+        AsyncStorage.getItem('DarkTheme').then((value) => {
+            if (value !== null) {
+                setDark(JSON.parse(value));
+            }
+        });
+    }, []);
+
+    return (
+        <Tab.Navigator
+            initialRouteName="List-Item"
+            screenOptions={{
+                headerStyle: {
+                    backgroundColor: theme ? '#111' : '#fff',
+                },
+                headerTitleStyle: {
+                    color: theme ? '#fff' : '#000',
+                },
+                tabBarStyle: {
+                    backgroundColor: theme ? '#111' : '#fff',
+                },
+            }}
+        >
+            <Tab.Screen
+                name="List-ItemAdmin"
+                options={{
+                    tabBarIcon: (props) => <TabBarIcon name="list-ul" {...props} />,
+                }}
+            >
+                {(props) => (
+                    <ProductListScreen
+                        {...props}
+                        theme={theme}
+                        favoriteList={favoriteList}
+                        setFavoriteList={setFavoriteList}
+                    />
+                )}
+            </Tab.Screen>
+            <Tab.Screen
+                name="Favorite List"
+                options={{
+                    tabBarIcon: (props) => <TabBarIcon name="heart" {...props} />,
+                }}
+            >
+                {(props) => (
+                    <FavoriteProductScreen
+                        {...props}
+                        theme={theme}
+                        favoriteList={favoriteList}
+                        setFavoriteList={setFavoriteList}
+                    />
+                )}
+            </Tab.Screen>
+            <Tab.Screen
+                name="Detail"
+                options={{
+                    tabBarButton: () => null,
+                }}
+            >
+                {(props) => (
+                    <DetailProductScreen
+                        {...props}
+                        theme={theme}
+                        favoriteList={favoriteList}
+                        setFavoriteList={setFavoriteList}
+                    />
+                )}
+            </Tab.Screen>
+            <Tab.Screen
+                name="Setting"
+                options={{
+                    tabBarIcon: (props) => <TabBarIcon name="gear" {...props} />,
+                }}
+            >
+                {(props) => (
+                    <SettingScreen
+                        {...props}
+                        theme={theme}
+                        setDark={setDark}
+                        favoriteList={favoriteList}
+                        setFavoriteList={setFavoriteList}
+                    />
+                )}
+            </Tab.Screen>
+        </Tab.Navigator>
+    );
+}
 
 export default function App() {
     return (
         <>
             <NavigationContainer>
-                <Stack.Navigator>
+                <Stack.Navigator initialRouteName="Login">
                     <Stack.Screen name="Login" component={Login} />
+                    <Stack.Screen name="Signup" component={Signup} />
                     <Stack.Screen
                         name="Home"
                         component={HomeTabs}
+                        options={{
+                            header: () => null,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="HomeAdmin"
+                        component={HomeAdminTabs}
                         options={{
                             header: () => null,
                         }}
@@ -523,6 +813,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         padding: 15,
     },
+
     text: {
         justifyContent: 'flex-start',
         fontSize: 20,
@@ -546,11 +837,24 @@ const styles = StyleSheet.create({
         color: 'red',
     },
     button: {
-        backgroundColor: 'grey',
+        backgroundColor: 'darkblue',
         width: '40%',
         height: 50,
         borderRadius: 6,
         justifyContent: 'center',
+    },
+    signup: {
+        backgroundColor: 'white',
+        width: '100%',
+        height: 50,
+        borderRadius: 6,
+        marginTop: 0,
+        justifyContent: 'center',
+    },
+    signupText: {
+        alignSelf: 'center',
+        fontSize: 16,
+        color: 'lightblue',
     },
     buttonText: {
         alignSelf: 'center',
