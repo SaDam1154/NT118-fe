@@ -25,7 +25,9 @@ const Stack = createNativeStackNavigator();
 
 var user;
 //  localhost Life2
-const localhost = '192.168.1.19';
+// const localhost = '192.168.1.19';
+//OKURO
+const localhost = '192.168.10.93';
 // const localhost = 'localhost';
 
 function TextInTheme({ theme = false, ...props }) {
@@ -291,6 +293,10 @@ function DetailProductScreen({ route, theme, favoriteList, setFavoriteList }) {
     );
 }
 function SettingScreen({ navigation, route, theme, setDark }) {
+    const [lastname, setLastName] = useState(user.lastname || null);
+    const [phone, setPhone] = useState(user.phone);
+    const [address, setAddress] = useState(user.address);
+    const [message, setMessage] = useState('');
     function handleChangeTheme() {
         AsyncStorage.setItem('DarkTheme', JSON.stringify(!theme)).then((value) => {});
         setDark((previousState) => !previousState);
@@ -305,7 +311,7 @@ function SettingScreen({ navigation, route, theme, setDark }) {
                 backgroundColor: theme ? '#222' : '#eee',
             }}
         >
-            <ScrollView style={{ flex: 1, padding: 24, backgroundColor: theme ? '#222' : '#eee' }}>
+            <ScrollView style={{ padding: 24, width: '100%', backgroundColor: theme ? '#222' : '#eee' }}>
                 <Text style={styles.text}>Name:</Text>
                 <TextInput
                     style={styles.input}
@@ -330,27 +336,6 @@ function SettingScreen({ navigation, route, theme, setDark }) {
                         setAddress(text);
                     }}
                 ></TextInput>
-                <Text style={styles.text}>Email:</Text>
-                <TextInput
-                    style={styles.input}
-                    value={email}
-                    onChangeText={(text) => {
-                        setEmail(text);
-                    }}
-                ></TextInput>
-                <Text style={styles.text}>Password:</Text>
-                <TextInput
-                    style={styles.input}
-                    value={password}
-                    secureTextEntry={true}
-                    onChangeText={(text) => {
-                        setPassword(text);
-                    }}
-                />
-                <Text style={styles.message}>{message}</Text>
-                <TouchableOpacity style={styles.button} onPress={Signup}>
-                    <Text style={styles.buttonText}>Signup</Text>
-                </TouchableOpacity>
             </ScrollView>
             <View
                 style={{
@@ -408,30 +393,35 @@ function Login({ navigation, route, theme, setDark }) {
             .then((resJson) => {
                 if (resJson.success) {
                     // setLoading(false);
-                    setLog(true);
+                    if (user?.role?.name == 'Chủ cửa hàng') {
+                        navigation.navigate('HomeAdmin');
+                    } else {
+                        navigation.navigate('Home');
+                    }
                     // dispatch(accountActions.login(resJson.account));
                     // else navigate('/');
                     console.log(resJson.user);
                     user = resJson.user;
                 } else {
                     // setLoading(false);
-                    showErorrNoti();
+                    // showErorrNoti();
                     setMessage(resJson.message);
                 }
             })
             .catch(() => {
                 // setLoading(false);
-                showErorrNoti();
+                setMessage('Lỗi kết nối!!');
+                // showErorrNoti();show
             });
         // setBMI(weight / (height*height));
-        if (email && password) {
-            if (log) {
-                if (user?.role?.name == 'Chủ cửa hàng') {
-                    navigation.navigate('HomeAdmin');
-                } else {
-                    navigation.navigate('Home');
-                }
+
+        if (log) {
+            if (user?.role?.name == 'Chủ cửa hàng') {
+                navigation.navigate('HomeAdmin');
+            } else {
+                navigation.navigate('Home');
             }
+            setMessage('Sai tên tài khoản hoặc mật khẩu');
         }
     };
     return (
@@ -503,8 +493,12 @@ function Signup({ navigation, route, theme, setDark }) {
             .then((res) => res.json())
             .then((resJson) => {
                 if (resJson.success) {
-                    setLog(true);
                     console.log(resJson.user);
+                    if (user?.role?.name == 'Chủ cửa hàng') {
+                        navigation.navigate('HomeAdmin');
+                    } else {
+                        navigation.navigate('Home');
+                    }
                     user = resJson.user;
                 } else {
                     // showErorrNoti();
@@ -513,19 +507,11 @@ function Signup({ navigation, route, theme, setDark }) {
                 }
             })
             .catch((err) => {
-                showErorrNoti();
+                // showErorrNoti();
+                setMessage('Lỗi kết nối !!!');
                 console.log(err);
             });
         // setBMI(weight / (height*height));
-        if (email && password && phone && lastname && address) {
-            if (log) {
-                if (user?.role?.name == 'Chủ cửa hàng') {
-                    navigation.navigate('HomeAdmin');
-                } else {
-                    navigation.navigate('Home');
-                }
-            }
-        }
     };
     return (
         <ScrollView style={{ flex: 1, padding: 24, backgroundColor: theme ? '#222' : '#eee' }}>
