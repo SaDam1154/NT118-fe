@@ -16,18 +16,21 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createBottomTabNavigator, BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import * as ImagePicker from 'expo-image-picker';
 import { FontAwesome } from '@expo/vector-icons';
 // import Login from './components/login';
 const Stack = createNativeStackNavigator();
 
 //  localhost my3G
 // const localhost = '192.168.8.242';
+//  localhost HOANGNAM
+const localhost = '192.168.1.201';
 
 var user;
 //  localhost Life2
 // const localhost = '192.168.1.19';
 //OKURO
-const localhost = '192.168.10.93';
+// const localhost = '192.168.10.93';
 // const localhost = 'localhost';
 
 function TextInTheme({ theme = false, ...props }) {
@@ -53,7 +56,7 @@ function TextInTheme2({ theme = false, ...props }) {
     );
 }
 
-function ProductCard({ theme, product, isFavorite = false, onFavoriteChange }) {
+function ProductCard({ navigation, theme, product, isFavorite = false, onFavoriteChange }) {
     const [isFavoriteState, setIsFavoriteState] = useState(isFavorite);
 
     useEffect(() => {
@@ -109,14 +112,24 @@ function ProductCard({ theme, product, isFavorite = false, onFavoriteChange }) {
                     {product.price + ' đ'}
                 </Text>
             </View>
-            <TouchableOpacity
-                onPress={handleIsFavoriteChange}
-                style={{
-                    alignSelf: 'center',
-                }}
-            >
-                <FontAwesome size={24} color={isFavoriteState ? '#f33' : '#bbb'} name="heart" />
-            </TouchableOpacity>
+            <View style={{ display: 'flex', gap: 50, alignItems: 'center', justifyContent: 'center' }}>
+                <TouchableOpacity
+                    onPress={() => navigation.navigate('Update', { product })}
+                    style={{
+                        alignSelf: 'center',
+                    }}
+                >
+                    <FontAwesome size={24} color={'#bbb'} name="pencil" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                    onPress={handleIsFavoriteChange}
+                    style={{
+                        alignSelf: 'center',
+                    }}
+                >
+                    <FontAwesome size={24} color={isFavoriteState ? '#f33' : '#bbb'} name="heart" />
+                </TouchableOpacity>
+            </View>
         </View>
     );
 }
@@ -160,6 +173,7 @@ function ProductListScreen({ navigation, theme, favoriteList, setFavoriteList })
                     <ProductCard
                         theme={theme}
                         product={product}
+                        navigation={navigation}
                         isFavorite={favoriteList.includes(product.id)}
                         onFavoriteChange={(isFavorite) => handleChangeFavoriteList(product.id, isFavorite)}
                     />
@@ -292,10 +306,149 @@ function DetailProductScreen({ route, theme, favoriteList, setFavoriteList }) {
         </ScrollView>
     );
 }
+function UpdateProductScreen({ route, theme, favoriteList, setFavoriteList }) {
+    const product = route.params.product;
+    const [imageUrl, setImageUrl] = useState(product.image);
+    const [name, setName] = useState(product.name);
+    const [price, setPrice] = useState(product.price);
+    const [priceDiscount, setPriceDiscount] = useState(product.priceDiscount);
+    const [description, setDescreipt] = useState(product.description);
+    const [isDiscounted, setIsDiscounted] = useState(product.isDiscounted);
+    const [quantity, setQuantity] = useState(product.quantity);
+    const isFavorite = favoriteList.includes(product.id);
+    function handleChangeFavoriteList() {
+        let newFavoriteList = [];
+
+        if (!isFavorite) {
+            newFavoriteList = [...favoriteList, product.id];
+        } else {
+            newFavoriteList = favoriteList.filter((_id) => _id !== product.id);
+        }
+        setFavoriteList(newFavoriteList);
+
+        AsyncStorage.setItem('favorites', JSON.stringify(newFavoriteList)).then((value) => {});
+    }
+    var myHeaders = new Headers();
+    myHeaders.append('Content-Type', 'application/json');
+
+    var raw = JSON.stringify({
+        image: imageUrl,
+        name: name,
+        quantity: quantity,
+        price: price,
+        priceDiscount: priceDiscount,
+        description: description,
+        isDiscounted: isDiscounted,
+    });
+
+    var requestOptions = {
+        method: 'PUT',
+        headers: myHeaders,
+        body: raw,
+        redirect: 'follow',
+    };
+
+    fetch('http://' + localhost + ':5000/api/auth/login', requestOptions)
+        .then((res) => res.json())
+        .then((resJson) => {
+            if (resJson.success) {
+                // setLoading(false);
+                if (user?.role?.name == 'Chủ cửa hàng') {
+                    navigation.navigate('HomeAdmin');
+                } else {
+                    navigation.navigate('Home');
+                }
+                // dispatch(accountActions.login(resJson.account));
+                // else navigate('/');
+                console.log(resJson.user);
+                user = resJson.user;
+            } else {
+                // setLoading(false);
+                // showErorrNoti();
+                setMessage(resJson.message);
+            }
+        })
+        .catch(() => {
+            // setLoading(false);
+            setMessage('Lỗi kết nối!!');
+            // showErorrNoti();show
+        });
+    const pickImage = async () => {
+        // No permissions request is necessary for launching the image library
+        let result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.All,
+            allowsEditing: true,
+            aspect: [4, 3],
+            quality: 1,
+        });
+        if (!result.canceled) {
+            setImageUrl(result.assets[0].uri);
+        }
+    };
+
+    return (
+        <ScrollView style={{ flex: 1, padding: 16, backgroundColor: theme ? '#222' : '#eee' }}>
+            <TouchableOpacity onPress={pickImage}>
+                <Image
+                    source={imageUrl ? { uri: imageUrl } : product.image}
+                    style={{
+                        width: '100%',
+                        height: 300,
+                        borderRadius: 16,
+                        backgroundColor: 'white',
+                    }}
+                />
+            </TouchableOpacity>
+            <View
+                style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                }}
+            >
+                <View>
+                    <TextInTheme2
+                        theme={theme}
+                        style={{
+                            fontSize: 20,
+                            marginVertical: 8,
+                            fontWeight: 'bold',
+                        }}
+                    >
+                        {product.name}
+                    </TextInTheme2>
+                    <TextInTheme2
+                        theme={theme}
+                        style={{
+                            fontSize: 20,
+                            color: 'red',
+                        }}
+                    >
+                        {product.price + ' đ'}
+                    </TextInTheme2>
+                </View>
+                <TouchableOpacity onPress={handleChangeFavoriteList}>
+                    <FontAwesome
+                        size={30}
+                        color={isFavorite ? 'red' : 'gray'}
+                        name="heart"
+                        style={{
+                            alignSelf: 'center',
+                        }}
+                    />
+                </TouchableOpacity>
+            </View>
+            <TextInTheme2 theme={theme} style={{ fontWeight: 900, marginTop: 16, marginBottom: 4 }}>
+                Description:
+            </TextInTheme2>
+            <TextInTheme2 theme={theme}>{product.description}</TextInTheme2>
+        </ScrollView>
+    );
+}
 function SettingScreen({ navigation, route, theme, setDark }) {
-    const [lastname, setLastName] = useState(user.lastname || null);
-    const [phone, setPhone] = useState(user.phone);
-    const [address, setAddress] = useState(user.address);
+    const [lastname, setLastName] = useState(user.lastname || '');
+    const [phone, setPhone] = useState(user.phone || '');
+    const [address, setAddress] = useState(user.address || '');
     const [message, setMessage] = useState('');
     function handleChangeTheme() {
         AsyncStorage.setItem('DarkTheme', JSON.stringify(!theme)).then((value) => {});
@@ -648,6 +801,21 @@ function HomeTabs() {
                 )}
             </Tab.Screen>
             <Tab.Screen
+                name="Update"
+                options={{
+                    tabBarButton: () => null,
+                }}
+            >
+                {(props) => (
+                    <UpdateProductScreen
+                        {...props}
+                        theme={theme}
+                        favoriteList={favoriteList}
+                        setFavoriteList={setFavoriteList}
+                    />
+                )}
+            </Tab.Screen>
+            <Tab.Screen
                 name="Setting"
                 options={{
                     tabBarIcon: (props) => <TabBarIcon name="gear" {...props} />,
@@ -768,8 +936,8 @@ export default function App() {
         <>
             <NavigationContainer>
                 <Stack.Navigator initialRouteName="Login">
-                    <Stack.Screen name="Login" component={Login} />
-                    <Stack.Screen name="Signup" component={Signup} />
+                    {/* <Stack.Screen name="Login" component={Login} />
+                    <Stack.Screen name="Signup" component={Signup} /> */}
                     <Stack.Screen
                         name="Home"
                         component={HomeTabs}
